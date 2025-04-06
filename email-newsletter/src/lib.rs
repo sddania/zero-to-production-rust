@@ -7,7 +7,7 @@ async fn health_check() -> HttpResponse {
 }
 
 pub fn run(lts: TcpListener) -> Result<Server, std::io::Error> {
-    let server = HttpServer::new(|| App::new().route("/health_check", web::get().to(health_check)))
+    let server = HttpServer::new(|| App::new().route("/healthz", web::get().to(health_check)))
         .listen(lts)?
         .run();
 
