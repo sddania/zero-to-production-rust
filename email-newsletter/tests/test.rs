@@ -23,6 +23,38 @@ async fn health_check_works() {
     assert_eq!(Some(0), response.content_length());
 }
 
+#[tokio::test]
+async fn greets_works() -> Result<(), Box<dyn std::error::Error>> {
+    // Arrange
+    let addr = spawn_app();
+    let client = reqwest::Client::new();
+    let url = format!("{}", addr);
+    // Act
+    let response = client.get(url).send().await?;
+    // Assert
+    assert!(response.status().is_success());
+    let text_content = response.text().await?;
+    assert_eq!("Hello World!", text_content);
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn greets_with_name_works() -> Result<(), Box<dyn std::error::Error>> {
+    // Arrange
+    let addr = spawn_app();
+    let client = reqwest::Client::new();
+    let url = format!("{}/pippo", addr);
+    // Act
+    let response = client.get(url).send().await?;
+    // Assert
+    assert!(response.status().is_success());
+    let text_content = response.text().await?;
+    assert_eq!("Hello pippo!", text_content);
+
+    Ok(())
+}
+
 // Launch our application in the background ~somehow~
 fn spawn_app() -> String {
     let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind random port");
