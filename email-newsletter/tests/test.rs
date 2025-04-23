@@ -6,6 +6,17 @@
 
 use std::net::TcpListener;
 
+// Launch our application in the background ~somehow~
+fn spawn_app() -> String {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind random port");
+    // We retrieve the port assigned to us by the OS
+    let port = listener.local_addr().unwrap().port();
+    let server = zero2prod::run_server(listener).expect("Failed to bind address");
+    let _ = tokio::spawn(server);
+    // We return the application address to the caller!
+    format!("http://127.0.0.1:{}", port)
+}
+
 #[tokio::test]
 async fn health_check_works() {
     // Arrange
@@ -24,44 +35,51 @@ async fn health_check_works() {
 }
 
 #[tokio::test]
-async fn greets_works() -> Result<(), Box<dyn std::error::Error>> {
+async fn subscribe_returns_a_200_for_valid_form_data() {
     // Arrange
-    let addr = spawn_app();
+    let app_address = spawn_app();
     let client = reqwest::Client::new();
-    let url = format!("{}", addr);
-    // Act
-    let response = client.get(url).send().await?;
-    // Assert
-    assert!(response.status().is_success());
-    let text_content = response.text().await?;
-    assert_eq!("Hello World!", text_content);
 
-    Ok(())
+    // Act
+    let body = "name=sddania&email=sddania%40gmail.com";
+    let response = client
+        .post(format!("{}/subscriptions", app_address))
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .body(body)
+        .send()
+        .await
+        .expect("Failed to execute request.");
+
+    // Assert
+    assert_eq!(200, response.status().as_u16());
 }
 
 #[tokio::test]
-async fn greets_with_name_works() -> Result<(), Box<dyn std::error::Error>> {
+async fn subscribe_returns_a_400_when_data_is_missing() {
     // Arrange
-    let addr = spawn_app();
+    let app_address = spawn_app();
     let client = reqwest::Client::new();
-    let url = format!("{}/pippo", addr);
-    // Act
-    let response = client.get(url).send().await?;
-    // Assert
-    assert!(response.status().is_success());
-    let text_content = response.text().await?;
-    assert_eq!("Hello pippo!", text_content);
-
-    Ok(())
-}
-
-// Launch our application in the background ~somehow~
-fn spawn_app() -> String {
-    let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind random port");
-    // We retrieve the port assigned to us by the OS
-    let port = listener.local_addr().unwrap().port();
-    let server = zero2prod::run_server(listener).expect("Failed to bind address");
-    let _ = tokio::spawn(server);
-    // We return the application address to the caller!
-    format!("http://127.0.0.1:{}", port)
+    let test_cases = vec![
+        ("name=sddania", "missing the email"),
+        ("email=sddania%40gmail.com", "missing the name"),
+        ("", "missing both name and email"),
+    ];
+    for (invalid_body, error_message) in test_cases {
+        // Act
+        let response = client
+            .post(&format!("{}/subscriptions", &app_address))
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(invalid_body)
+            .send()
+            .await
+            .expect("Failed to execute request.");
+        // Assert
+        assert_eq!(
+            400,
+            response.status().as_u16(),
+            // Additional customised error message on test failure
+            "The API did not fail with 400 Bad Request when the payload was {}.",
+            error_message
+        );
+    }
 }
