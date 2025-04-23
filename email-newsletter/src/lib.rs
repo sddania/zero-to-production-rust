@@ -11,7 +11,7 @@ async fn greet(req: HttpRequest) -> impl Responder {
     format!("Hello {}!", &name)
 }
 
-pub fn run(lts: TcpListener) -> Result<Server, std::io::Error> {
+pub fn run_server(lts: TcpListener) -> Result<Server, std::io::Error> {
     let server = HttpServer::new(|| {
         App::new()
             .route("/healthz", web::get().to(health_check))
