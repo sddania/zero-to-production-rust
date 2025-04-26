@@ -1,6 +1,4 @@
-use actix_web::Error;
 use config::{Config, ConfigError};
-use serde::ser;
 
 #[derive(serde::Deserialize)]
 pub struct Settings {
@@ -27,11 +25,18 @@ pub fn get_configuration() -> Result<Settings, ConfigError> {
         .build()?
         .try_deserialize::<Settings>()
 }
+
 impl DatabaseSettings {
     pub fn connection_string(&self) -> String {
         format!(
             "postgres://{}:{}@{}:{}/{}",
             self.username, self.password, self.host, self.port, self.database_name
+        )
+    }
+    pub fn connection_string_without_db(&self) -> String {
+        format!(
+            "postgres://{}:{}@{}:{}",
+            self.username, self.password, self.host, self.port
         )
     }
 }
