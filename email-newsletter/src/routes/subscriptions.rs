@@ -1,7 +1,6 @@
 use actix_web::{web, HttpResponse};
 use serde::Deserialize;
-use sqlx::PgPool;
-use sqlx::types::chrono::Utc;
+use sqlx::{types::chrono::Utc, PgPool};
 use uuid::Uuid;
 
 // https://www.joshmcguigan.com/blog/understanding-serde/
@@ -35,7 +34,6 @@ pub async fn subscribe(
         Err(e) => {
             println!("Failed to execute query: {}", e);
             HttpResponse::InternalServerError().finish()
-        },
+        }
     }
-    
 }
