@@ -1,0 +1,10 @@
+{
+    "recommendations": [
+        "fill-labs.dependi",
+        "ms-azuretools.vscode-containers",
+        "rust-lang.rust-analyzer",
+        "vadimcn.vscode-lldb",
+        "tamasfe.even-better-toml",
+        "jscearcy.rust-doc-viewer"
+    ]
+}
