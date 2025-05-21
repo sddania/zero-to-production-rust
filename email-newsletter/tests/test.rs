@@ -136,6 +136,9 @@ async fn subscribe_returns_a_400_when_data_is_missing() {
         ("name=sddania", "missing the email"),
         ("email=sddania%40gmail.com", "missing the name"),
         ("", "missing both name and email"),
+        ("name=", "name are present but empty"),
+        ("email=", "email are present but empty"),
+        ("email=&name=", "email and name are present but empty"),
     ];
     for (invalid_body, error_message) in test_cases {
         // Act
