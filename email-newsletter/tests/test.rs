@@ -48,10 +48,11 @@ async fn spawn_app() -> TestApp {
     let connection_pool = configure_database(&configuration.database).await;
 
     let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind random port");
+    let listener_email = TcpListener::bind("127.0.0.1:0").expect("Failed to bind random port");
     // We retrieve the port assigned to us by the OS
     let port = listener.local_addr().unwrap().port();
-    let server =
-        startup::run_server(listener, connection_pool.clone()).expect("Failed to bind address");
+    let server = startup::run_server(connection_pool.clone(), listener, listener_email)
+        .expect("Failed to bind address");
 
     let _ = tokio::spawn(server);
 
@@ -101,7 +102,7 @@ async fn health_check_works() {
     assert_eq!(Some(0), response.content_length());
 }
 
-#[tokio::test]
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn subscribe_returns_a_200_for_valid_form_data() {
     // Arrange
     let test_app = spawn_app().await;
