@@ -21,10 +21,12 @@ async fn main() -> std::io::Result<()> {
         .email_client
         .sender()
         .expect("Invalid sender email address");
+    let timeout = configuration.email_client.timeout();
     let email_client = EmailClient::new(
         configuration.email_client.base_url,
         sender,
         configuration.email_client.authorization_token,
+        timeout,
     );
 
     run_server(connection_pool, host_listener, email_client)?.await

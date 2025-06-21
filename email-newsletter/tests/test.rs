@@ -12,6 +12,7 @@ use sqlx::{Connection, Executor, PgConnection, PgPool};
 use uuid::Uuid;
 use zero2prod::{
     configuration::{get_configuration, DatabaseSettings},
+    email_client::EmailClient,
     startup,
     telemetry::{get_subscriber, init_subscriber},
 };
@@ -48,10 +49,11 @@ async fn spawn_app() -> TestApp {
     let connection_pool = configure_database(&configuration.database).await;
 
     let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind random port");
-    let listener_email = TcpListener::bind("127.0.0.1:0").expect("Failed to bind random port");
+    let email_client = email_client(configuration);
+
     // We retrieve the port assigned to us by the OS
     let port = listener.local_addr().unwrap().port();
-    let server = startup::run_server(connection_pool.clone(), listener, listener_email)
+    let server = startup::run_server(connection_pool.clone(), listener, email_client)
         .expect("Failed to bind address");
 
     let _ = tokio::spawn(server);
@@ -61,6 +63,21 @@ async fn spawn_app() -> TestApp {
         address,
         db_pool: connection_pool,
     }
+}
+
+fn email_client(configuration: zero2prod::configuration::Settings) -> EmailClient {
+    let timeout = configuration.email_client.timeout();
+    let sender_email = configuration
+        .email_client
+        .sender()
+        .expect("Invalid sender email address");
+    let email_client = EmailClient::new(
+        configuration.email_client.base_url,
+        sender_email,
+        configuration.email_client.authorization_token,
+        timeout,
+    );
+    email_client
 }
 
 async fn configure_database(config: &DatabaseSettings) -> sqlx::Pool<sqlx::Postgres> {
